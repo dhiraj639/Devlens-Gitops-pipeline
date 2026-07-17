@@ -28,7 +28,7 @@ spec:
       containers:
       - name: devlens-frontend
 
-        image: radhiraj23/devlens-frontend-beta:4cabb1c
+        image: radhiraj23/devlens-frontend-beta:3cdc1c1
 
         imagePullPolicy: Always
 
