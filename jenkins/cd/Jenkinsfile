@@ -2,7 +2,7 @@
 
 pipeline {
 
-    agent { label 'Node' }
+    agent { label 'Built-In Node' }
 
     parameters {
         string(
