@@ -1,4 +1,4 @@
-# DevLens: AI & ML Powered Developer Intelligence Platform
+# DevLens: AI & ML Powered Developer Intelligence Platform(Check)
 
 DevLens is a premium, pixel-perfect developer analytics and career acceleration dashboard. It audits developer profiles across multiple dimensions—evaluating code repositories, DSA progress, and resume ATS scores—to predict placement readiness and recommend tailored learning pathways.
 
