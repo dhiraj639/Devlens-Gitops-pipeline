@@ -99,7 +99,7 @@ pipeline {
             steps {
                 dir('app') {
                     script {
-                        build(
+                        dockerBuild(
                             env.IMAGE_NAME,
                             env.IMAGE_TAG,
                             env.DOCKERHUB_USERNAME
@@ -112,7 +112,7 @@ pipeline {
         stage('Docker Push') {
             steps {
                 script {
-                    push(
+                    dockerPush(
                         env.IMAGE_NAME,
                         env.IMAGE_TAG,
                         env.DOCKERHUB_USERNAME
