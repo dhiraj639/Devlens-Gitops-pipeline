@@ -54,7 +54,7 @@ pipeline {
                 dir('k8s') {
 
                     sh """
-                    sed -i 's|image: .*|image: ${DOCKERHUB_USERNAME}/${IMAGE_NAME}:${params.IMAGE_TAG}|g' deployment.yaml
+                    sed -i 's|image: .*|image: ${DOCKERHUB_USERNAME}/${IMAGE_NAME}:${params.IMAGE_TAG}|g' deployment.yml
                     """
 
                 }
@@ -73,7 +73,7 @@ pipeline {
                     )
                 ]) {
 
-                    sh '''
+                    sh """
 
                     git config user.email "jenkins@devlens.com"
                     git config user.name "Jenkins"
@@ -87,7 +87,7 @@ pipeline {
 
                     git push origin main
 
-                    '''
+                    """
 
                 }
 
