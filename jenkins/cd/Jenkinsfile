@@ -28,7 +28,7 @@ pipeline {
         stage('Checkout Repository') {
             steps {
                 script {
-                    checkout(
+                    git_checkout(
                         "https://github.com/dhiraj639/Devlens-Gitops-pipeline.git",
                         "main"
                     )
