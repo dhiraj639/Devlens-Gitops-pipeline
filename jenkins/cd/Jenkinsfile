@@ -1,0 +1,149 @@
+@Library('Shared') _
+
+pipeline {
+
+    agent { label 'Node' }
+
+    parameters {
+        string(
+            name: 'IMAGE_TAG',
+            defaultValue: '',
+            description: 'Docker Image Tag'
+        )
+    }
+
+    environment {
+        IMAGE_NAME = "devlens-frontend-beta"
+        DOCKERHUB_USERNAME = "radhiraj23"
+    }
+
+    stages {
+
+        stage('Workspace Cleanup') {
+            steps {
+                cleanWs()
+            }
+        }
+
+        stage('Checkout Repository') {
+            steps {
+                script {
+                    checkout(
+                        "https://github.com/dhiraj639/Devlens-Gitops-pipeline.git",
+                        "main"
+                    )
+                }
+            }
+        }
+
+        stage('Verify Image Tag') {
+            steps {
+                script {
+                    if(params.IMAGE_TAG == ""){
+                        error("IMAGE_TAG is missing.")
+                    }
+
+                    echo "Deploying Image Tag : ${params.IMAGE_TAG}"
+                }
+            }
+        }
+
+        stage('Update Kubernetes Manifest') {
+            steps {
+
+                dir('k8s') {
+
+                    sh """
+                    sed -i 's|image: .*|image: ${DOCKERHUB_USERNAME}/${IMAGE_NAME}:${params.IMAGE_TAG}|g' deployment.yaml
+                    """
+
+                }
+
+            }
+        }
+
+        stage('Commit & Push Changes') {
+
+            steps {
+
+                withCredentials([
+                    gitUsernamePassword(
+                        credentialsId: 'Github-cred',
+                        gitToolName: 'Default'
+                    )
+                ]) {
+
+                    sh '''
+
+                    git config user.email "jenkins@devlens.com"
+                    git config user.name "Jenkins"
+
+                    git add .
+
+                    git diff --cached --quiet || \
+                    git commit -m "Updated image tag to ${IMAGE_TAG}"
+
+                    git pull origin main --rebase
+
+                    git push origin main
+
+                    '''
+
+                }
+
+            }
+
+        }
+
+    }
+
+    post {
+
+        success {
+
+            emailext(
+
+                subject: "Deployment Successful : ${env.JOB_NAME}",
+
+                body: """
+                    Deployment Successful
+
+                    Job : ${env.JOB_NAME}
+
+                    Build : ${env.BUILD_NUMBER}
+
+                    Image : ${params.IMAGE_TAG}
+
+                    URL : ${env.BUILD_URL}
+                    """,
+
+                to: "radhiraj128@gmail.com"
+
+            )
+
+        }
+
+        failure {
+
+            emailext(
+
+                subject: "Deployment Failed : ${env.JOB_NAME}",
+
+                body: """
+                    Deployment Failed
+
+                    Job : ${env.JOB_NAME}
+
+                    Build : ${env.BUILD_NUMBER}
+
+                    URL : ${env.BUILD_URL}
+                    """,
+                to: "radhiraj128@gmail.com"
+
+            )
+
+        }
+
+    }
+
+}

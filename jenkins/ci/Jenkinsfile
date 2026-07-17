@@ -1,0 +1,132 @@
+@Library('Shared') _
+
+pipeline {
+
+    agent { label 'Node' }
+
+    environment {
+        IMAGE_NAME = "devlens-frontend-beta"
+        DOCKERHUB_USERNAME = "radhiraj23"
+    }
+
+    stages {
+
+        stage('Workspace Cleanup') {
+            steps {
+                cleanWs()
+            }
+        }
+
+        stage('Checkout Source') {
+            steps {
+                script {
+                    checkout(
+                        "https://github.com/dhiraj639/Devlens-Gitops-pipeline.git",
+                        "main"
+                    )
+                }
+            }
+        }
+
+        stage('Generate Image Tag') {
+            steps {
+                script {
+                    env.IMAGE_TAG = sh(
+                        script: "git rev-parse --short HEAD",
+                        returnStdout: true
+                    ).trim()
+
+                    echo "Generated Image Tag : ${env.IMAGE_TAG}"
+                }
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                dir('app') {
+                    sh 'npm ci'
+                }
+            }
+        }
+
+        stage('Build React Application') {
+            steps {
+                dir('app') {
+                    sh 'npm run build'
+                }
+            }
+        }
+
+        stage('Trivy Filesystem Scan') {
+            steps {
+                script {
+                    trivy_scan()
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    sonarqube_analysis(
+                        "Sonar",
+                        "devlens",
+                        "devlens"
+                    )
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                script {
+                    sonarqube_code_quality()
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                dir('app') {
+                    script {
+                        build(
+                            env.IMAGE_NAME,
+                            env.IMAGE_TAG,
+                            env.DOCKERHUB_USERNAME
+                        )
+                    }
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                script {
+                    push(
+                        env.IMAGE_NAME,
+                        env.IMAGE_TAG,
+                        env.DOCKERHUB_USERNAME
+                    )
+                }
+            }
+        }
+
+    }
+
+    post {
+
+        success {
+
+            build job: "Devlens-CD",
+            parameters: [
+                string(
+                    name: 'IMAGE_TAG',
+                    value: env.IMAGE_TAG
+                )
+            ]
+
+        }
+
+    }
+
+}
